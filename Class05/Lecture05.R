@@ -1,7 +1,8 @@
 #' ---
-#' title: "Class05"
+#' title: "Class05 Introduction to R Graphics"
 #' author: "Liam Shweyk"
 #' date: "January 24, 2019"
+#' output: github_document
 #' ---
 
 # Lecture 5 R Graphics Intro
