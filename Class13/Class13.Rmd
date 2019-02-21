@@ -1,0 +1,71 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Prepare HIV-protease molecule for docking
+
+First get a PDB structure from the online database then clean it up for docking
+
+```{r}
+library(bio3d)
+file.name <- get.pdb("1hsg")
+```
+
+Read file into R and clean it up (remove non-protein bits) and also we will save the ligand into a separate file
+
+```{r}
+hiv <- read.pdb(file.name)
+hiv
+```
+
+```{r}
+prot <- trim.pdb(hiv, "protein")
+prot
+```
+
+```{r}
+write.pdb(prot, file = "1hsg_protein.pdb")
+```
+
+```{r}
+lig <- trim.pdb(hiv, "ligand")
+lig
+```
+
+```{r}
+write.pdb(lig, file = "1hsg_ligand.pdb")
+```
+
+```{r}
+library(bio3d)
+res <- read.pdb("all.pdbqt", multi=TRUE)
+write.pdb(res, "results.pdb")
+```
+
+## Read in outdoc results
+
+```{r}
+res <- read.pdb("all.pdbqt", multi=TRUE)
+ori <- read.pdb("1hsg_ligand.pdbqt")
+rmsd(ori, res)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
