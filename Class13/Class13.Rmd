@@ -55,7 +55,18 @@ ori <- read.pdb("1hsg_ligand.pdbqt")
 rmsd(ori, res)
 ```
 
+## Normal Mode Analysis
 
+```{r}
+pdb <- read.pdb("1HEL")
+
+m <- nma(pdb)
+plot(m)
+```
+
+```{r}
+mktrj(m, mode = 7, file = "nmg_7.pdb")
+```
 
 
 
