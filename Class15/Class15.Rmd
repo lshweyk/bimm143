@@ -1,0 +1,192 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+counts <- read.csv("airway_scaledcounts.csv", stringsAsFactors = FALSE)
+metadata <-  read.csv("airway_metadata.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+head(counts)
+```
+
+```{r}
+head(metadata)
+```
+
+```{r}
+colnames(counts)
+```
+
+```{r}
+metadata$id
+```
+
+
+```{r}
+all(colnames(counts)[-1] == metadata$id)
+```
+
+First Task: Find which columns in **counts** correspond to the control conditions (i.e. no drug!). Then we can calculate the mean count value for each gene.
+
+```{r}
+control.inds <- metadata$dex == "control"
+control.ids <- metadata$id[control.inds]
+head(counts[,control.ids])
+```
+
+Calculate the mean counts value for all genes
+```{r}
+control.mean <- rowSums(counts[,control.ids])/ncol(counts[,control.ids])
+```
+
+Now do the same thing for the drug treated samples (i.e. **treated** columns)
+
+```{r}
+treated.inds <- metadata$dex == "treated"
+treated.ids <- metadata$id[treated.inds]
+head(counts[,treated.ids])
+treated.mean <- rowSums(counts[,treated.ids])/ncol(counts[,treated.ids])
+ 
+names(treated.mean) <- counts$ensgene
+```
+
+Combine the mean count values for control and treated into a new data.frame called meancounts!
+```{r}
+meancounts <- data.frame(control.mean, treated.mean)
+```
+
+```{r}
+colSums(meancounts)
+```
+
+Now we can plot the drug treated vs non-drug control count values
+```{r}
+plot(meancounts$control.mean, meancounts$treated.mean)
+```
+
+
+```{r}
+plot(meancounts$control.mean, meancounts$treated.mean, log="xy")
+```
+
+```{r}
+meancounts$log2fc <- log2(meancounts[,"treated.mean"]/meancounts[,"control.mean"])
+head(meancounts)
+```
+
+```{r}
+toy <- c(1,2,0,4,0)
+which(toy==0)
+```
+
+```{r}
+toy <- meancounts[1:6,]
+toy[,1:2]==0
+unique(which(toy[,1:2]==0, arr.ind = TRUE)[,1])
+```
+
+
+```{r}
+zero.vals <- which(meancounts[,1:2]==0, arr.ind=TRUE)
+
+to.rm <- unique(zero.vals[,1])
+mycounts <- meancounts[-to.rm,]
+head(mycounts)
+```
+
+```{r}
+up.ind <- mycounts$log2fc > 2
+down.ind <- mycounts$log2fc < (-2)
+```
+
+```{r}
+sum(up.ind)
+```
+
+```{r}
+sum(down.ind)
+```
+
+```{r}
+head(mycounts[up.ind,])
+```
+
+
+There are `sum(up.ind)` up regulated genes and `sum(down.ind)` down regulated genes.
+
+```{r}
+anno <- read.csv("annotables_grch38.csv")
+head(anno)
+```
+
+```{r}
+mycounts.annotated <- merge(x=mycounts, y=anno, by.x="row.names", by.y="ensgene")
+head(mycounts.annotated)
+```
+
+##DESeq2 analysis
+
+Now we do this analysis properly with p-values!
+
+```{r}
+library(DESeq2)
+```
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData=counts, 
+                              colData=metadata, 
+                              design=~dex, 
+                              tidy=TRUE)
+dds
+```
+
+```{r}
+dds <- DESeq(dds)
+res <- results(dds)
+res
+```
+
+```{r}
+summary(res)
+```
+
+```{r}
+res01 <- results(dds, alpha = 0.01)
+summary(res01)
+```
+
+```{r}
+plot(res01$log2FoldChange, -log(res01$padj))
+```
+
+```{r}
+mycols <- rep("gray", nrow(res01))
+mycols[abs(res01$log2FoldChange)>2] <- "red"
+inds <- (res01$padj<0.01)&(abs(res01$log2FoldChange)>2)
+mycols[inds] <- "blue"
+#Volcano plot with custom colors
+plot(res01$log2FoldChange, -log(res01$padj), col=mycols, ylab="-Log(P-value)", xlab="Log2(FoldChange)")
+abline(v=c(-2, 2), col="gray", lty=2)
+abline(h=-log(0.1), col="gray", lty=2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
